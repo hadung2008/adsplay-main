@@ -515,6 +515,50 @@ AdPlay là hệ thống phát nội dung nội bộ qua mạng LAN, phù hợp c
 - Xử lý upload session: `backend/src/services/upload-session.service.ts`
 - Tối ưu video bằng FFmpeg: `backend/src/services/media.service.ts`
 
+### Deploy trên Windows 10 (dùng trong mạng LAN)
+
+1. Cài Node.js bản LTS trên máy sẽ chạy AdPlay. Tải hoặc clone repository về máy và giải nén nếu cần.
+2. Chạy `start.bat` ở thư mục gốc. Lần đầu, script sẽ cài dependencies, build frontend/backend và tạo `backend\.env`. Giữ cửa sổ đang chạy mở để server tiếp tục hoạt động.
+3. Trước khi cho người khác truy cập, mở `backend\.env` và đổi `ADMIN_USERNAME`, `ADMIN_PASSWORD` thành thông tin riêng; giữ `JWT_SECRET` là chuỗi ngẫu nhiên do script tạo hoặc thay bằng chuỗi bí mật khác. Chạy lại `start.bat` nếu vừa sửa file.
+4. Cho phép Node.js hoặc TCP port `3000` qua Windows Defender Firewall trên mạng **Private**. Không mở port này cho mạng Public.
+5. Trên máy chủ, chạy `ipconfig` để tìm IPv4 Address. Từ thiết bị trong cùng mạng Wi-Fi/LAN, mở `http://<IPv4-của-máy-chủ>:3000/admin`; player dùng `http://<IPv4-của-máy-chủ>:3000/player`.
+
+Máy Windows cần luôn bật, không ngủ và có kết nối mạng ổn định. Database và media được lưu trong thư mục `backend` của repository; hãy sao lưu `backend\db.json` và `backend\uploads` định kỳ. Hướng dẫn này chỉ dành cho mạng LAN tin cậy; không chuyển tiếp port `3000` ra Internet trực tiếp. Muốn truy cập từ Internet, cần triển khai thêm HTTPS và một phương án truy cập từ xa an toàn.
+
+### Deploy lên Render
+
+AdPlay gồm frontend Angular và backend Express được phục vụ chung trên một dịch vụ. Hãy tạo **Web Service** (không phải Static Site) từ repository:
+
+1. Trên Render, chọn **New > Web Service**, kết nối repository và để **Root Directory** trống (thư mục gốc của repository).
+2. Chọn runtime **Node** và nhập:
+
+   **Build Command**
+   ```bash
+   npm ci --prefix backend && npm ci --prefix frontend && npm run build --prefix frontend && npm run build --prefix backend
+   ```
+
+   **Start Command**
+   ```bash
+   npm run start:prod --prefix backend
+   ```
+
+3. Trong **Environment Variables**, thêm:
+   - `NODE_ENV` = `production`
+   - `JWT_SECRET` = một chuỗi ngẫu nhiên, dài và khó đoán
+   - `ADMIN_USERNAME` và `ADMIN_PASSWORD` = thông tin đăng nhập riêng, không dùng `admin / admin`
+
+   Render tự cấp `PORT`; không cần đặt giá trị này thủ công.
+4. Nhấn **Create Web Service** và đợi lần build/deploy đầu tiên hoàn tất. Mở URL Render để vào dashboard tại `/admin`.
+
+**Lưu trữ dữ liệu:** AdPlay lưu database và media dưới dạng file. Filesystem mặc định của dịch vụ Render không bền vững qua lần deploy hoặc khởi động lại. Để giữ dữ liệu, gắn **Persistent Disk** vào `/var/data`, rồi đặt thêm:
+
+```text
+DB_FILE=/var/data/db.json
+UPLOADS_DIR=/var/data/uploads
+```
+
+Persistent Disk cần gói Render hỗ trợ disk và chỉ dùng được với một instance; không scale dịch vụ này thành nhiều instance. Nếu không gắn disk, hãy coi dữ liệu đã upload là tạm thời và tự sao lưu trước khi redeploy.
+
 ---
 
 ## License
