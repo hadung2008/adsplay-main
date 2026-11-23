@@ -496,6 +496,8 @@ If you run this in production:
 
 AdPlay là hệ thống phát nội dung nội bộ qua mạng LAN, phù hợp cho quán cafe, nhà hàng, văn phòng, cửa hàng và các màn hình trình chiếu đơn giản.
 
+Xem [Hướng dẫn sử dụng AdPlay](./HUONG_DAN_SU_DUNG.md) để biết cách tải nội dung, tạo playlist và kết nối TV/tablet.
+
 ### Cách dùng nhanh
 
 1. Chạy `start.command` trên macOS, `./start.sh` trên Linux/macOS Terminal, hoặc `start.bat` trên Windows
