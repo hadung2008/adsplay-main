@@ -1,0 +1,117 @@
+<div #container class="fixed inset-0 bg-black flex items-center justify-center z-50 overflow-hidden font-sans"
+    [class.cursor-none]="session.isCursorHidden()">
+    @if (!session.profile()) {
+    <div
+        class="absolute top-0 left-1/2 -translate-x-1/2 w-[50rem] h-[50rem] bg-brand-primary opacity-10 rounded-full pointer-events-none">
+    </div>
+    }
+
+    @if (session.statusMessage() && !session.profile()) {
+    <div
+        class="absolute top-4 left-4 z-[80] max-w-sm rounded-2xl border border-white/10 bg-black/50 px-4 py-3 text-xs font-medium text-slate-200 backdrop-blur-xl">
+        {{ session.statusMessage() }}
+    </div>
+    }
+
+    @if (session.loading()) {
+    <div class="flex flex-col items-center animate-fade-in relative z-10">
+        <div class="relative w-24 h-24">
+            <div class="absolute inset-0 border-4 border-white/10 rounded-full"></div>
+            <div
+                class="absolute inset-0 border-4 border-brand-primary border-t-transparent rounded-full animate-spin-slow shadow-[0_0_20px_rgba(45,212,191,0.5)]">
+            </div>
+            <div class="absolute inset-4 bg-brand-primary/20 rounded-full animate-pulse-glow"></div>
+        </div>
+    </div>
+    }
+
+    @else if (!session.profile()) {
+    <div
+        class="w-full max-w-6xl px-4 flex flex-col items-center max-h-screen overflow-y-auto py-12 relative z-10 animate-fade-in">
+
+        <div class="flex items-center gap-3 mb-10 text-brand-primary opacity-80">
+            <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span class="text-2xl font-bold tracking-tight uppercase">ADSPLAY</span>
+        </div>
+
+        <h1 class="text-white text-4xl md:text-6xl font-black mb-16 tracking-tighter text-glow uppercase text-center">
+            Chọn Màn Hình
+        </h1>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full">
+            @for (p of session.allProfiles(); track p.slug) {
+            <button (click)="session.selectProfile(p)"
+                class="p-8 rounded-3xl text-center group relative overflow-hidden hover:scale-105 transition-all duration-300 border border-white/10 hover:border-brand-primary/50 bg-white/5 hover:bg-white/10 shadow-2xl">
+                <div
+                    class="absolute inset-0 bg-gradient-to-br from-brand-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                </div>
+                <h2
+                    class="text-white text-3xl font-bold mb-4 group-hover:text-brand-primary transition-colors relative z-10 tracking-tight">
+                    {{ p.name }}</h2>
+                <div
+                    class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/30 border border-white/5 text-gray-400 text-xs font-bold uppercase tracking-wider relative z-10">
+                    <span class="w-2 h-2 rounded-full" [class.bg-brand-primary]="p.videoCount > 0"
+                        [class.bg-red-500]="p.videoCount === 0"></span>
+                    {{ p.videoCount }} CONTENT
+                </div>
+            </button>
+            }
+            @if (session.allProfiles().length === 0) {
+            <div class="col-span-full text-center py-20 border border-dashed border-white/10 rounded-3xl bg-white/5">
+                <p class="text-gray-400 text-xl font-light">Chưa có màn hình nào được tạo.</p>
+                <a href="/admin"
+                    class="mt-8 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-brand-primary text-white font-bold hover:bg-brand-primary-hover transition-colors shadow-lg shadow-brand-primary/20 uppercase tracking-widest text-sm">
+                    Về Trang Quản Trị
+                </a>
+            </div>
+            }
+        </div>
+    </div>
+    }
+
+    @else {
+    @if (!session.profile()?.videos || session.profile()?.videos?.length === 0) {
+    <div class="flex flex-col items-center space-y-6 animate-fade-in relative z-10">
+        <div class="text-white text-3xl font-bold tracking-tight">Màn hình chưa có nội dung</div>
+        <button (click)="session.backToSelection()"
+            class="px-8 py-3 rounded-full border border-white/20 text-white hover:bg-white/10 transition-colors uppercase tracking-widest text-sm font-bold">
+            Quay Lại
+        </button>
+    </div>
+    } @else {
+	    <div class="w-full h-full bg-black relative group/player flex items-center justify-center overflow-hidden">
+	        @if (session.currentMediaType() === 'image') {
+          <img [src]="session.currentImageUrl()" class="relative z-10 max-w-full max-h-full w-full h-full object-contain shadow-2xl transition-all duration-700"
+            alt="Current ad image" (load)="session.onImageLoaded()">
+          } @else {
+	        <video #videoPlayer [src]="session.localVideoUrl()"
+	            [attr.poster]="session.currentVideoPosterUrl() || null"
+	            class="relative z-10 max-w-full max-h-full w-full h-full object-contain shadow-2xl transition-all duration-700"
+	            [class.scale-95]="session.isVideoPortrait() && !session.isFullscreen()" playsinline webkit-playsinline
+	            x5-playsinline (ended)="session.onVideoEnded()" (error)="session.onVideoError()"
+            (loadedmetadata)="session.onMetadataLoaded($event)">
+          </video>
+          }
+    </div>
+
+    @if (session.currentMediaType() === 'video' && session.showUnmuteOverlay()) {
+    <div
+        class="absolute bottom-6 left-1/2 z-[80] flex items-center gap-3 -translate-x-1/2 rounded-full border border-white/10 bg-black/70 px-4 py-3 text-white backdrop-blur-xl">
+        <svg class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M11 5L6 9H3v6h3l5 4V5zm5.707 1.293a1 1 0 010 1.414A7 7 0 0119 12a7 7 0 01-2.293 5.293 1 1 0 11-1.414-1.414A5 5 0 0017 12a5 5 0 00-1.707-3.879 1 1 0 010-1.414z" />
+        </svg>
+        <span class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-100">
+            Chạm, bấm hoặc nhấn OK để bật âm thanh / toàn màn hình
+        </span>
+    </div>
+    }
+
+    }
+    }
+</div>
